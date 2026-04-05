@@ -18,7 +18,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- ================== HOME TAB ==================
-local HomeTab = Window:CreateTab("Home", 4483362458)
+local HomeTab = Window:CreateTab("Home", 4483362458)  -- House icon (you can change)
 
 HomeTab:CreateSection("Welcome")
 
@@ -30,7 +30,7 @@ HomeTab:CreateParagraph({
 HomeTab:CreateButton({
     Name = "Copy Discord Link",
     Callback = function()
-        setclipboard("https://discord.gg/yourdiscord")  -- ← Replace with your real Discord invite
+        setclipboard("https://discord.gg/yourdiscord")  -- Change this to your real invite
         Rayfield:Notify({
             Title = "Copied!",
             Content = "Discord link copied to clipboard",
@@ -42,7 +42,7 @@ HomeTab:CreateButton({
 -- ================== MAIN TAB ==================
 local MainTab = Window:CreateTab("Main", 5012345678)
 
-MainTab:CreateSection("Auto Features")
+local MainSection = MainTab:CreateSection("Auto Features")
 
 -- Auto Bonds Toggle
 local AutoBondsEnabled = false
@@ -57,7 +57,7 @@ MainTab:CreateToggle({
         if Value then
             print("[Auto Bonds] Enabled")
 
-            -- Rail movement + camera loop
+            -- Rail movement loop
             task.spawn(function()
                 repeat task.wait() until game.Players.LocalPlayer.Character
                 local root = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
@@ -109,7 +109,10 @@ MainTab:CreateToggle({
                             root.CFrame = CFrame.new(pos)
                         end
 
-                        workspace.CurrentCamera.CFrame = CFrame.new(pos + Vector3.new(0, 15, 0), pos)
+                        workspace.CurrentCamera.CFrame = CFrame.new(
+                            pos + Vector3.new(0, 15, 0),
+                            pos
+                        )
 
                         game:GetService("RunService").RenderStepped:Wait()
                     end
@@ -136,7 +139,7 @@ MainTab:CreateToggle({
                     currentRail = nextRail
                 end
 
-                -- Cleanup when turned off
+                -- Cleanup
                 workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
                 print("[Auto Bonds] Rail movement stopped")
             end)
@@ -155,4 +158,32 @@ MainTab:CreateToggle({
                 end
             end)
 
-            -- Optional
+            -- Auto reset character after 40 seconds
+            task.delay(40, function()
+                if AutoBondsEnabled and game.Players.LocalPlayer.Character then
+                    game.Players.LocalPlayer.Character:BreakJoints()
+                end
+            end)
+
+        else
+            AutoBondsEnabled = false
+            print("[Auto Bonds] Disabled")
+            workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+        end
+    end
+})
+
+-- Destroy GUI Button
+MainTab:CreateButton({
+    Name = "Destroy GUI",
+    Callback = function()
+        Rayfield:Destroy()
+    end
+})
+
+-- Load notification
+Rayfield:Notify({
+    Title = "Munity Hub",
+    Content = "Loaded successfully! Script by Dan Vincent",
+    Duration = 6
+})
