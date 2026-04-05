@@ -1,0 +1,158 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Munity Hub",
+    LoadingTitle = "Munity Hub",
+    LoadingSubtitle = "by Dan Vincent",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "MunityHub",
+        FileName = "Config"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "",
+        RememberJoins = true
+    },
+    KeySystem = false
+})
+
+-- ================== HOME TAB ==================
+local HomeTab = Window:CreateTab("Home", 4483362458)
+
+HomeTab:CreateSection("Welcome")
+
+HomeTab:CreateParagraph({
+    Title = "Munity Hub",
+    Content = "Script by Dan Vincent\n\nJoin our Discord for updates, keys, and support!"
+})
+
+HomeTab:CreateButton({
+    Name = "Copy Discord Link",
+    Callback = function()
+        setclipboard("https://discord.gg/yourdiscord")  -- ← Replace with your real Discord invite
+        Rayfield:Notify({
+            Title = "Copied!",
+            Content = "Discord link copied to clipboard",
+            Duration = 5
+        })
+    end
+})
+
+-- ================== MAIN TAB ==================
+local MainTab = Window:CreateTab("Main", 5012345678)
+
+MainTab:CreateSection("Auto Features")
+
+-- Auto Bonds Toggle
+local AutoBondsEnabled = false
+
+MainTab:CreateToggle({
+    Name = "Auto Bonds",
+    CurrentValue = false,
+    Flag = "AutoBonds",
+    Callback = function(Value)
+        AutoBondsEnabled = Value
+        
+        if Value then
+            print("[Auto Bonds] Enabled")
+
+            -- Rail movement + camera loop
+            task.spawn(function()
+                repeat task.wait() until game.Players.LocalPlayer.Character
+                local root = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+
+                local velo = 1500
+                local tRails = {}
+
+                for _, obj in ipairs(workspace:WaitForChild("RailSegments"):GetDescendants()) do
+                    if obj:IsA("BasePart") and obj.Name == "Guide" then
+                        table.insert(tRails, obj)
+                    end
+                end
+
+                local function pathway(pos)
+                    local closest, dist = nil, math.huge
+                    for _, rail in ipairs(tRails) do
+                        local d = (rail.Position - pos).Magnitude
+                        if d < dist then
+                            dist = d
+                            closest = rail
+                        end
+                    end
+                    return closest
+                end
+
+                workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
+
+                local currentRail = pathway(root.Position)
+                local currentPos = currentRail and currentRail.Position or root.Position
+
+                local tVisited = {}
+                local lastDirection = Vector3.new(0, 0, 1)
+
+                while AutoBondsEnabled do
+                    if currentRail then
+                        tVisited[currentRail] = true
+                        lastDirection = currentRail.CFrame.LookVector.Unit
+                    end
+
+                    local targetPos = currentPos - lastDirection * 20
+                    local distance = (targetPos - currentPos).Magnitude
+                    local duration = distance / velo
+                    local start = tick()
+
+                    while tick() - start < duration and AutoBondsEnabled do
+                        local pos = currentPos:Lerp(targetPos, (tick() - start) / duration)
+
+                        if root and root.Parent then
+                            root.CFrame = CFrame.new(pos)
+                        end
+
+                        workspace.CurrentCamera.CFrame = CFrame.new(pos + Vector3.new(0, 15, 0), pos)
+
+                        game:GetService("RunService").RenderStepped:Wait()
+                    end
+
+                    if not AutoBondsEnabled then break end
+
+                    currentPos = targetPos
+
+                    local nextRail = nil
+                    local bDot = 0.5
+
+                    for _, rail in ipairs(tRails) do
+                        if not tVisited[rail] then
+                            local toRail = (rail.Position - currentPos).Unit
+                            local dot = lastDirection:Dot(toRail)
+
+                            if dot > bDot and (rail.Position - currentPos).Magnitude < 50 then
+                                bDot = dot
+                                nextRail = rail
+                            end
+                        end
+                    end
+
+                    currentRail = nextRail
+                end
+
+                -- Cleanup when turned off
+                workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+                print("[Auto Bonds] Rail movement stopped")
+            end)
+
+            -- Remote firing loop
+            task.spawn(function()
+                while AutoBondsEnabled do
+                    for i = 1000, 1500 do
+                        if not AutoBondsEnabled then break end
+                        pcall(function()
+                            game:GetService("ReplicatedStorage").Shared.Universe.Network.RemoteEvent.Actionable:FireServer(i)
+                        end)
+                        task.wait()
+                    end
+                    task.wait()
+                end
+            end)
+
+            -- Optional
