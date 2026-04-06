@@ -1,189 +1,246 @@
+-- Munity Hub | Made by Dan Vincent
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
     Name = "Munity Hub",
+    Icon = 0,
     LoadingTitle = "Munity Hub",
     LoadingSubtitle = "by Dan Vincent",
+    Theme = "Default",
+    DisableRayfieldPrompts = false,
+    DisableBuildWarnings = false,
+
     ConfigurationSaving = {
         Enabled = true,
         FolderName = "MunityHub",
-        FileName = "Config"
+        FileName = "MunityHub_Config"
     },
+
     Discord = {
         Enabled = false,
-        Invite = "",
+        Invite = "your-discord-invite",
         RememberJoins = true
     },
-    KeySystem = false
+
+    KeySystem = false,
+    KeySettings = {
+        Title = "Munity Hub",
+        Subtitle = "Key System",
+        Note = "Key required - join Discord for access",
+        FileName = "MunityHub_Key",
+        SaveKey = true,
+        GrabKeyFromSite = false,
+        Key = {"munitykey123"}
+    }
 })
 
--- ================== HOME TAB ==================
-local HomeTab = Window:CreateTab("Home", 4483362458)  -- House icon (you can change)
+-- ==================== HOME TAB ====================
+local HomeTab = Window:CreateTab("Home", 4483362458)
 
-HomeTab:CreateSection("Welcome")
+HomeTab:CreateSection("Welcome to Munity Hub")
 
 HomeTab:CreateParagraph({
-    Title = "Munity Hub",
-    Content = "Script by Dan Vincent\n\nJoin our Discord for updates, keys, and support!"
+    Title = "Information",
+    Content = "Made By Dan Vincent\n\n" ..
+              "Join discord if someone said this script is paid\n\n" ..
+              "This is a completely free script made for the community.\n" ..
+              "Do not pay anyone for this hub."
 })
 
 HomeTab:CreateButton({
-    Name = "Copy Discord Link",
+    Name = "Copy Discord Invite",
     Callback = function()
-        setclipboard("https://discord.gg/yourdiscord")  -- Change this to your real invite
+        setclipboard("https://discord.gg/yourinvite")  -- Replace with your real link if you have one
         Rayfield:Notify({
-            Title = "Copied!",
-            Content = "Discord link copied to clipboard",
-            Duration = 5
+            Title = "Munity Hub",
+            Content = "Discord link copied!",
+            Duration = 3
         })
     end
 })
 
--- ================== MAIN TAB ==================
-local MainTab = Window:CreateTab("Main", 5012345678)
+-- ==================== MAIN TAB ====================
+local MainTab = Window:CreateTab("Main", 4483362458)
 
-local MainSection = MainTab:CreateSection("Auto Features")
+MainTab:CreateSection("General Features")
 
--- Auto Bonds Toggle
-local AutoBondsEnabled = false
+-- Auto Bonds v2 Feature (Toggle)
+local AutoBondsFeature = {
+    _active = false,
+    onEnable = function(self)
+        self._active = true
+        task.spawn(function()
+            while self._active do
+                -- Auto Bonds v2 Logic (Dead Rails compatible)
+                task.spawn(function()
+                    repeat task.wait() until game.Players.LocalPlayer.Character
+                    local root = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
 
-MainTab:CreateToggle({
-    Name = "Auto Bonds",
-    CurrentValue = false,
-    Flag = "AutoBonds",
-    Callback = function(Value)
-        AutoBondsEnabled = Value
-        
-        if Value then
-            print("[Auto Bonds] Enabled")
+                    local velo = 1500
+                    local tRails = {}
 
-            -- Rail movement loop
-            task.spawn(function()
-                repeat task.wait() until game.Players.LocalPlayer.Character
-                local root = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
-
-                local velo = 1500
-                local tRails = {}
-
-                for _, obj in ipairs(workspace:WaitForChild("RailSegments"):GetDescendants()) do
-                    if obj:IsA("BasePart") and obj.Name == "Guide" then
-                        table.insert(tRails, obj)
-                    end
-                end
-
-                local function pathway(pos)
-                    local closest, dist = nil, math.huge
-                    for _, rail in ipairs(tRails) do
-                        local d = (rail.Position - pos).Magnitude
-                        if d < dist then
-                            dist = d
-                            closest = rail
+                    for _, obj in ipairs(workspace:WaitForChild("RailSegments"):GetDescendants()) do
+                        if obj:IsA("BasePart") and obj.Name == "Guide" then
+                            table.insert(tRails, obj)
                         end
                     end
-                    return closest
-                end
 
-                workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
-
-                local currentRail = pathway(root.Position)
-                local currentPos = currentRail and currentRail.Position or root.Position
-
-                local tVisited = {}
-                local lastDirection = Vector3.new(0, 0, 1)
-
-                while AutoBondsEnabled do
-                    if currentRail then
-                        tVisited[currentRail] = true
-                        lastDirection = currentRail.CFrame.LookVector.Unit
-                    end
-
-                    local targetPos = currentPos - lastDirection * 20
-                    local distance = (targetPos - currentPos).Magnitude
-                    local duration = distance / velo
-                    local start = tick()
-
-                    while tick() - start < duration and AutoBondsEnabled do
-                        local pos = currentPos:Lerp(targetPos, (tick() - start) / duration)
-
-                        if root and root.Parent then
-                            root.CFrame = CFrame.new(pos)
-                        end
-
-                        workspace.CurrentCamera.CFrame = CFrame.new(
-                            pos + Vector3.new(0, 15, 0),
-                            pos
-                        )
-
-                        game:GetService("RunService").RenderStepped:Wait()
-                    end
-
-                    if not AutoBondsEnabled then break end
-
-                    currentPos = targetPos
-
-                    local nextRail = nil
-                    local bDot = 0.5
-
-                    for _, rail in ipairs(tRails) do
-                        if not tVisited[rail] then
-                            local toRail = (rail.Position - currentPos).Unit
-                            local dot = lastDirection:Dot(toRail)
-
-                            if dot > bDot and (rail.Position - currentPos).Magnitude < 50 then
-                                bDot = dot
-                                nextRail = rail
+                    function pathway(pos)
+                        local closest, dist = nil, math.huge
+                        for _, rail in ipairs(tRails) do
+                            local d = (rail.Position - pos).Magnitude
+                            if d < dist then
+                                dist = d
+                                closest = rail
                             end
                         end
+                        return closest
                     end
 
-                    currentRail = nextRail
-                end
+                    workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
 
-                -- Cleanup
-                workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-                print("[Auto Bonds] Rail movement stopped")
-            end)
+                    local currentRail = pathway(root.Position)
+                    local currentPos = currentRail and currentRail.Position or root.Position
 
-            -- Remote firing loop
-            task.spawn(function()
-                while AutoBondsEnabled do
-                    for i = 1000, 1500 do
-                        if not AutoBondsEnabled then break end
-                        pcall(function()
-                            game:GetService("ReplicatedStorage").Shared.Universe.Network.RemoteEvent.Actionable:FireServer(i)
-                        end)
-                        task.wait()
+                    local tVisited = {}
+                    local lastDirection = Vector3.new(0, 0, 1)
+
+                    while self._active do  -- Added check to stop when disabled
+                        if currentRail then
+                            tVisited[currentRail] = true
+                            lastDirection = currentRail.CFrame.LookVector.Unit
+                        end
+
+                        local targetPos = currentPos - lastDirection * 20
+                        local distance = (targetPos - currentPos).Magnitude
+                        local duration = distance / velo
+                        local start = tick()
+
+                        while tick() - start < duration and self._active do
+                            local pos = currentPos:Lerp(targetPos, (tick() - start) / duration)
+
+                            root.CFrame = CFrame.new(pos)
+
+                            workspace.CurrentCamera.CFrame = CFrame.new(
+                                pos + Vector3.new(0, 15, 0),
+                                pos
+                            )
+
+                            game:GetService("RunService").RenderStepped:Wait()
+                        end
+
+                        currentPos = targetPos
+
+                        local nextRail = nil
+                        local bDot = .5
+
+                        for _, rail in ipairs(tRails) do
+                            if not tVisited[rail] then
+                                local toRail = (rail.Position - currentPos).Unit
+                                local dot = lastDirection:Dot(toRail)
+
+                                if dot > bDot and (rail.Position - currentPos).Magnitude < 50 then
+                                    bDot = dot
+                                    nextRail = rail
+                                end
+                            end
+                        end
+
+                        currentRail = nextRail
                     end
-                    task.wait()
-                end
-            end)
+                end)
 
-            -- Auto reset character after 40 seconds
-            task.delay(40, function()
-                if AutoBondsEnabled and game.Players.LocalPlayer.Character then
-                    game.Players.LocalPlayer.Character:BreakJoints()
-                end
-            end)
+                task.spawn(function()
+                    while self._active do
+                        for i = 1000, 1500 do
+                            pcall(function()
+                                game:GetService("ReplicatedStorage").Shared.Universe.Network.RemoteEvent.Actionable:FireServer(i)
+                            end)
+                            task.wait()
+                        end
+                    end
+                end)
 
-        else
-            AutoBondsEnabled = false
-            print("[Auto Bonds] Disabled")
+                task.delay(40, function()
+                    if self._active then
+                        game.Players.LocalPlayer.Character:BreakJoints()
+                    end
+                end)
+
+                task.wait(0.5)
+            end
+        end)
+    end,
+    onDisable = function(self)
+        self._active = false
+        -- Reset camera when disabled
+        pcall(function()
             workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+        end)
+    end,
+}
+
+MainTab:CreateToggle({
+    Name = "Auto Bonds v2",
+    CurrentValue = false,
+    Flag = "AutoBondsV2",
+    Callback = function(Value)
+        if Value then
+            AutoBondsFeature:onEnable()
+            Rayfield:Notify({
+                Title = "Munity Hub",
+                Content = "Auto Bonds v2 Enabled (Dead Rails)",
+                Duration = 4
+            })
+        else
+            AutoBondsFeature:onDisable()
+            Rayfield:Notify({
+                Title = "Munity Hub",
+                Content = "Auto Bonds v2 Disabled",
+                Duration = 3
+            })
         end
     end
 })
 
--- Destroy GUI Button
+-- Other example features (you can keep or remove)
 MainTab:CreateButton({
-    Name = "Destroy GUI",
+    Name = "Print Hello World",
     Callback = function()
-        Rayfield:Destroy()
+        print("Hello from Munity Hub!")
+        Rayfield:Notify({
+            Title = "Munity Hub",
+            Content = "Button clicked successfully!",
+            Duration = 3
+        })
     end
 })
 
--- Load notification
-Rayfield:Notify({
-    Title = "Munity Hub",
-    Content = "Loaded successfully! Script by Dan Vincent",
-    Duration = 6
+MainTab:CreateToggle({
+    Name = "Infinite Jump",
+    CurrentValue = false,
+    Flag = "InfiniteJump",
+    Callback = function(Value)
+        -- (your previous infinite jump code here if you want to keep it)
+    end
 })
+
+-- ==================== PLAYER TAB ====================
+local PlayerTab = Window:CreateTab("Player", 4483362458)
+
+PlayerTab:CreateSection("Player Mods")
+
+PlayerTab:CreateButton({
+    Name = "Reset Character",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player.Character then
+            player.Character:BreakJoints()
+        end
+    end
+})
+
+-- Load saved configuration
+Rayfield:LoadConfiguration()
+
+print("Munity Hub loaded successfully! | Made by Dan Vincent")
